@@ -1,0 +1,212 @@
+---
+title: "Introduction to Leaflet"
+subtitle: "UF R Meetup"
+author: "Justin Millar"
+date: "2018/04/18"
+output:
+  xaringan::moon_reader:
+    css: ["theme.css", "fonts.css"]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+```
+
+```{r libs, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(leaflet)
+library(RColorBrewer)
+library(sp)
+library(raster)
+```
+
+class: inverse, center, middle
+
+### So what is Leaflet?
+
+---
+
+# What is Leaflet?
+
+`leaflet` is a package in R that can create interactive maps
+
+--
+
+## What is Leaflet, really?
+
+Leaflet is actually a JavaScript library, and the `leaflet` package is a wrapper that allows us to create Leaflet JavaScript using R code
+
+This isn't really important for using Leaflet in R applications, but may be handy to know for the future
+
+---
+
+```{r install, eval=FALSE}
+install.packages("leaflet")
+library(leaflet)
+
+leaflet() %>% 
+  setView(lat = 29.6436, lng = -82.3549, zoom = 14) %>%
+  addTiles() 
+```
+
+
+```{r world, echo=FALSE, out.width='100%'}
+library(leaflet)
+leaflet() %>% 
+  setView(lat = 29.6436, lng = -82.3549, zoom = 14) %>%
+  addTiles()
+```
+
+---
+class: inverse, center, middle
+
+### So kinds of R data can I use?
+
+---
+
+Regular old base R dataframe/matrix with lng/lat columns
+
+Spatial objects from the `sp` package
+* SpatialDataframes
+* SpatialLines
+* Polygons (from shp files)
+
+Map objects from the `maps` package
+
+```{r maps, out.width='100%', eval=FALSE}
+fl_counties <- maps::map("county", "florida", 
+                         fill = TRUE, plot = FALSE)
+
+leaflet(data = fl_counties) %>% 
+  addTiles() %>% 
+  addPolygons(fillColor = topo.colors(10, alpha = NULL), 
+              weight = 1, color = 'black')  
+```
+
+---
+
+```{r maps-show, out.width='100%', out.height='100%', echo=FALSE}
+fl_counties <- maps::map("county", "florida", 
+                         fill = TRUE, plot = FALSE)
+
+leaflet(data = fl_counties) %>% 
+  addTiles() %>% 
+  addPolygons(fillColor = topo.colors(10, alpha = NULL), 
+              weight = 1, color = 'black')  
+```
+
+---
+
+class: inverse, center, middle
+
+### Ok, that's great. But the interaction is more than just zooming in and out, right?
+
+---
+
+### Labels
+
+```{r label, out.width='100%', eval=FALSE}
+fl_map <- leaflet(data = fl_counties) %>% 
+  addTiles() %>% 
+  addPolygons(fillColor = topo.colors(10, alpha = NULL), 
+              weight = 1, color = 'black', 
+              label = ~as.character(names))
+```
+
+--
+### Markers
+
+```{r marker, out.width='100%', eval=FALSE}
+fl_map %>% 
+  addMarkers(lat = 29.64833, lng = -82.34944, 
+             popup = "University of Florida")
+```
+
+--
+### Highlighting
+
+```{r hlgt, out.width='100%', eval=FALSE}
+fl_map %>% 
+  addPolygons(highlightOptions(color = "red", weight = 3))
+```
+
+---
+```{r full, out.width='100%', out.height = '100%', echo=FALSE}
+leaflet(data = fl_counties) %>% 
+  addTiles() %>% 
+  addPolygons(fillColor = topo.colors(10, alpha = NULL), 
+              weight = 1, color = 'black', label = ~as.character(names), 
+              highlightOptions = highlightOptions(color = "red", weight = 3,
+                                                  bringToFront = TRUE)) %>% 
+    addMarkers(lat = 29.64833, lng = -82.34944, 
+             popup = "University of Florida")
+  
+```
+
+---
+class: inverse, center, middle
+
+### What about rasters?
+---
+## Rasters
+```{r raster-ex, eval=FALSE}
+
+worldclim <- raster::getData("worldclim", var = "bio", res = 10)
+r <- worldclim[[2]]
+
+pal <- colorNumeric("RdYlBu", values(r), na.color = "transparent")
+
+leaflet() %>% addTiles() %>%
+  addRasterImage(r, colors = pal, opacity = 0.8) %>%
+  addLegend(pal = pal, values = values(r), title = "worldclim[[2]]")
+```
+
+---
+
+```{r raster-map, out.width='100%', out.height = '100%', echo=FALSE, message=FALSE, warning=FALSE}
+
+worldclim <- raster::getData("worldclim", var = "bio", res = 10)
+r <- worldclim[[2]]
+
+pal <- colorNumeric("RdYlBu", values(r), na.color = "transparent")
+
+leaflet() %>% addTiles() %>%
+  addRasterImage(r, colors = pal, opacity = 0.8) %>%
+  addLegend(pal = pal, values = values(r), title = "worldclim[[2]]")
+```
+---
+class: inverse, center, middle
+
+### OK, so what do I do with this?
+
+---
+# Applications of Leaflet
+
+Leaflet maps can be embeded into HTML-based RMarkdown files (including presentations like this one!)
+* if you're interested, these slides were made with the [`xarigan` package](https://github.com/yihui/xaringan)
+
+--
+
+You can export Leaflet maps as an image with `mapview` package:
+```{r mapview, eval=FALSE}
+library(mapview)
+mapview::mapshot(fl_map, file = "Florida_Counties.png")
+```
+
+--
+
+## SHINY!!
+
+---
+class: inverse, center, middle
+
+# Shiny Example
+
+https://github.com/ufrmeetup/gruShiny/tree/master/app3
+
+
